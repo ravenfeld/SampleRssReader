@@ -16,16 +16,15 @@
 
 package fr.alecanu.samplerssreader;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -81,15 +80,13 @@ public class RssService extends AsyncTask<String, Void, Boolean> {
 
     @Override
     protected Boolean doInBackground(String... urls) {
-        Database dba = new Database(mContext);
-        dba.deleted();
-        dba.openToWrite();
+        mContext.getContentResolver().delete(ArticleProvider.CONTENT_URI, null, null);
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             factory.setNamespaceAware(true);
             XmlPullParser xpp = factory.newPullParser();
             URL url = new URL(urls[0]);
-            URLConnection connection  = url.openConnection();
+            URLConnection connection = url.openConnection();
             connection.setConnectTimeout(3000);
             connection.setReadTimeout(3000);
             xpp.setInput(connection.getInputStream(), UTF_8);
@@ -110,15 +107,22 @@ public class RssService extends AsyncTask<String, Void, Boolean> {
                         feed.setEncodedContent(xpp.nextText());
                     }
                 } else if (eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase(TAG_ITEM)) {
-                    dba.insertArticle(feed);
+                    ContentValues values = new ContentValues();
+
+                    values.put(ArticleProvider.KEY_TITLE, feed.getTitle());
+                    values.put(ArticleProvider.KEY_DESCRIPTION, feed.getDescription());
+                    values.put(ArticleProvider.KEY_PUB_DATE, Utils.dateToString(feed.getDate()));
+                    values.put(ArticleProvider.KEY_CONTENT, feed.getEncodedContent());
+                    values.put(ArticleProvider.KEY_IMAGE_URL, feed.getImageUrl());
+
+                    mContext.getContentResolver().insert(
+                            ArticleProvider.CONTENT_URI, values);
                 }
                 eventType = xpp.next();
             }
             return true;
-        } catch (XmlPullParserException|IOException e) {
+        } catch (XmlPullParserException | IOException e) {
             e.printStackTrace();
-        } finally {
-            dba.close();
         }
 
         return false;

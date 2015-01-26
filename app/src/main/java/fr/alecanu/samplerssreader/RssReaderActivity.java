@@ -17,6 +17,7 @@ package fr.alecanu.samplerssreader;
 
 import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Loader;
 import android.content.res.Configuration;
@@ -147,7 +148,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (mListViewEnabled) {
                     mArticleAdapter.getCursor().moveToPosition(position);
-                    int index = mArticleAdapter.getCursor().getInt(mArticleAdapter.getCursor().getColumnIndex(Database.KEY_ROW_ID));
+                    int index = mArticleAdapter.getCursor().getInt(mArticleAdapter.getCursor().getColumnIndex(ArticleProvider.KEY_ROW_ID));
                     startActivity(ArticleDetailActivity.newInstance(getApplicationContext(), index));
                 }
             }
@@ -175,7 +176,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-        return new ArticleLoader(this);
+        return new CursorLoader(this, ArticleProvider.CONTENT_URI, null, null, null, null);
     }
 
     @Override

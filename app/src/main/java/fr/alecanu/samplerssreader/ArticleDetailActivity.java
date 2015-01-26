@@ -22,6 +22,7 @@ import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.text.Html;
@@ -53,66 +54,72 @@ public class ArticleDetailActivity extends ActionBarActivity {
         if (intent != null) {
 
             int index = intent.getIntExtra(EXTRA_ID, -1);
-            Cursor cursor = new Database(this).openToRead().getArticle(index);
-            cursor.moveToFirst();
+            Cursor cursor = getContentResolver().query(Uri.parse("content://" + ArticleProvider.PROVIDER_NAME + "/article/" +
+                            index),
+                    null,
+                    null,
+                    null,
+                    null);
+            if (cursor.moveToFirst()) {
+                TextView title = (TextView) findViewById(android.R.id.text1);
+                title.setText(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_TITLE)));
+                TextView date = (TextView) findViewById(R.id.date);
+                date.setText(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_PUB_DATE)));
 
-            TextView title = (TextView) findViewById(android.R.id.text1);
-            title.setText(cursor.getString(cursor.getColumnIndex(Database.KEY_TITLE)));
-            TextView date = (TextView) findViewById(R.id.date);
-            date.setText(cursor.getString(cursor.getColumnIndex(Database.KEY_PUB_DATE)));
+                TextView description = (TextView) findViewById(android.R.id.text2);
+                //TODO Retrieve the pictures on the web and display them in the container
+                Spanned htmlSpan = Html.fromHtml(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_CONTENT)), new Html.ImageGetter() {
+                    @Override
+                    public Drawable getDrawable(String source) {
+                        return new Drawable() {
+                            @Override
+                            public void draw(Canvas canvas) {
 
-            TextView description = (TextView) findViewById(android.R.id.text2);
-            //TODO Retrieve the pictures on the web and display them in the container
-            Spanned htmlSpan = Html.fromHtml(cursor.getString(cursor.getColumnIndex(Database.KEY_CONTENT)), new Html.ImageGetter() {
-                @Override
-                public Drawable getDrawable(String source) {
-                    return new Drawable() {
-                        @Override
-                        public void draw(Canvas canvas) {
+                            }
 
-                        }
+                            @Override
+                            public void setAlpha(int alpha) {
 
-                        @Override
-                        public void setAlpha(int alpha) {
+                            }
 
-                        }
+                            @Override
+                            public void setColorFilter(ColorFilter cf) {
 
-                        @Override
-                        public void setColorFilter(ColorFilter cf) {
+                            }
 
-                        }
-
-                        @Override
-                        public int getOpacity() {
-                            return 0;
-                        }
-                    };
+                            @Override
+                            public int getOpacity() {
+                                return 0;
+                            }
+                        };
+                    }
                 }
+                        , null);
+                description.setText(htmlSpan);
+
+                final ImageView icon = (ImageView) findViewById(android.R.id.icon);
+                String imageUrl = cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_IMAGE_URL));
+                if (imageUrl == null) {
+                    icon.setVisibility(View.GONE);
+
+                }
+                Picasso.with(this) //
+                        .load(imageUrl) //
+                        .into(icon, new Callback() {
+
+                            @Override
+                            public void onSuccess() {
+                                icon.setVisibility(View.VISIBLE);
+
+                            }
+
+                            @Override
+                            public void onError() {
+                                icon.setVisibility(View.GONE);
+                            }
+                        });
             }
-                    , null);
-            description.setText(htmlSpan);
-
-            final ImageView icon = (ImageView) findViewById(android.R.id.icon);
-            String imageUrl = cursor.getString(cursor.getColumnIndex(Database.KEY_IMAGE_URL));
-            if (imageUrl == null) {
-                icon.setVisibility(View.GONE);
-
-            }
-            Picasso.with(this) //
-                    .load(imageUrl) //
-                    .into(icon, new Callback() {
-
-                        @Override
-                        public void onSuccess() {
-                            icon.setVisibility(View.VISIBLE);
-
-                        }
-
-                        @Override
-                        public void onError() {
-                            icon.setVisibility(View.GONE);
-                        }
-                    });
+            cursor.close();
         }
     }
 

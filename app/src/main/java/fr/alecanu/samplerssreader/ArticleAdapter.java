@@ -94,9 +94,9 @@ public class ArticleAdapter extends CursorAdapter {
     @Override
     public Cursor swapCursor(Cursor cursor) {
         if (cursor != null) {
-            mIconIndex = cursor.getColumnIndex(Database.KEY_IMAGE_URL);
-            mTitleIndex = cursor.getColumnIndex(Database.KEY_TITLE);
-            mDescriptionIndex = cursor.getColumnIndex(Database.KEY_DESCRIPTION);
+            mIconIndex = cursor.getColumnIndex(ArticleProvider.KEY_IMAGE_URL);
+            mTitleIndex = cursor.getColumnIndex(ArticleProvider.KEY_TITLE);
+            mDescriptionIndex = cursor.getColumnIndex(ArticleProvider.KEY_DESCRIPTION);
         }
         return super.swapCursor(cursor);
     }
