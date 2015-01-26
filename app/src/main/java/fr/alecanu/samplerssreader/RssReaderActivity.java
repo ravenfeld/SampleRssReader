@@ -22,6 +22,7 @@ import android.content.Loader;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -32,17 +33,17 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
-import java.util.Date;
 
-
-public class RssReaderActivity extends ActionBarActivity implements RssService.RssDataRetriever, LoaderManager.LoaderCallbacks<Cursor> {
+public class RssReaderActivity extends ActionBarActivity implements RssService.RssDataRetriever,
+        LoaderManager.LoaderCallbacks<Cursor>, SwipeRefreshLayout.OnRefreshListener {
     private static final String BLOG_URL = "http://www.trails-endurance.com/feed/";
     private static final int LOADER_RSS = 1;
     private RssService mRssService;
     private MenuItem mRefreshItem;
-    private RefreshListView mRefreshListView;
+    private SwipeRefreshLayout mSwipeLayout;
     private TextView mEmptyTextView;
     private boolean mListViewEnabled;
     private ArticleAdapter mArticleAdapter;
@@ -70,9 +71,9 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     protected void onResume() {
         super.onResume();
         if (Utils.isOnline(this)) {
-            mRefreshListView.setEnabledPull(true);
+            mSwipeLayout.setEnabled(true);
         } else {
-            mRefreshListView.setEnabledPull(false);
+            mSwipeLayout.setEnabled(false);
         }
     }
 
@@ -106,7 +107,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     @Override
     public void onDataReceivedRssError() {
         refreshItemAnimationFinished();
-        mRefreshListView.finishRefreshing();
+        mSwipeLayout.setRefreshing(false);
     }
 
 
@@ -136,21 +137,12 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
 
     private void initUI() {
         setContentView(R.layout.activity_rss_reader);
+        mSwipeLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        mSwipeLayout.setOnRefreshListener(this);
         mEmptyTextView = (TextView) findViewById(android.R.id.empty);
-        mRefreshListView = (RefreshListView) findViewById(android.R.id.list);
-        mRefreshListView.setEnabledDate(true, new Date());
+        ListView listView = (ListView) findViewById(android.R.id.list);
 
-        mRefreshListView.setRefreshListener(new RefreshListView.OnRefreshListener() {
-
-            @Override
-            public void onRefresh(RefreshListView listView) {
-                if (mListViewEnabled) {
-                    refreshItemAnimationStarted();
-                    refreshList();
-                }
-            }
-        });
-        mRefreshListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (mListViewEnabled) {
@@ -160,11 +152,11 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
                 }
             }
         });
-        mRefreshListView.setAdapter(mArticleAdapter);
+        listView.setAdapter(mArticleAdapter);
         if (Utils.isOnline(this)) {
-            mRefreshListView.setEnabledPull(true);
+            mSwipeLayout.setEnabled(true);
         } else {
-            mRefreshListView.setEnabledPull(false);
+            mSwipeLayout.setEnabled(false);
         }
 
     }
@@ -189,7 +181,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mArticleAdapter.swapCursor(data);
-        mRefreshListView.finishRefreshing();
+        mSwipeLayout.setRefreshing(false);
         refreshItemAnimationFinished();
         Utils.dismissProgressDialog();
         mEmptyTextView.setVisibility(mArticleAdapter.isEmpty() ? View.VISIBLE : View.GONE);
@@ -219,4 +211,11 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
         }
     }
 
+    @Override
+    public void onRefresh() {
+        if (mListViewEnabled) {
+            refreshItemAnimationStarted();
+            refreshList();
+        }
+    }
 }

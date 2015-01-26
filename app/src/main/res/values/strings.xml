@@ -20,11 +20,6 @@
     <string name="app_name">SampleRssReader</string>
     <string name="no_internet">Mode offline, please check that your internet connection is active.</string>
     <string name="ok">OK</string>
-    <string name="refreshlistview_arrow">Content Description Arrow</string>
-    <string name="refreshlistview_updating">Updating…</string>
-    <string name="refreshlistview_release">Release to refresh…</string>
-    <string name="refreshlistview_pulldown">Pull down to refresh…</string>
-    <string name="refreshlistview_no_update">"No past update"</string>
     <string name="refresh">Refresh</string>
     <string name="waiting">Please wait &#8230;</string>
     <string name="empty">Empty</string>
