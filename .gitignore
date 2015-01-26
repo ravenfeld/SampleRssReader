@@ -4,3 +4,10 @@
 /out
 .DS_Store
 /build
+gen/
+*.apk
+*.iml
+lint.xml
+release-note*
+*~
+obj/
