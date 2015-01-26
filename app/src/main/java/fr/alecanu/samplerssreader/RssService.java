@@ -81,6 +81,7 @@ public class RssService extends AsyncTask<String, Void, Boolean> {
     @Override
     protected Boolean doInBackground(String... urls) {
         mContext.getContentResolver().delete(ArticleProvider.CONTENT_URI, null, null);
+        Utils.deletePicassoCache(mContext);
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             factory.setNamespaceAware(true);

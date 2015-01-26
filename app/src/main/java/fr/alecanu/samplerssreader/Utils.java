@@ -22,6 +22,7 @@ import android.content.DialogInterface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -91,4 +92,22 @@ public class Utils {
         return formatter.format(date);
     }
 
+    public static void deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (String child : children) {
+                deleteDir(new File(dir, child));
+            }
+        } else if (dir != null) {
+            dir.delete();
+        }
+    }
+
+    public static void deletePicassoCache(Context context) {
+        File dir = context.getCacheDir();
+        if (dir != null && dir.isDirectory()) {
+            File picasso = new File(dir, "picasso-cache");
+            deleteDir(picasso);
+        }
+    }
 }
