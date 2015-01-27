@@ -19,14 +19,18 @@ package fr.alecanu.samplerssreader;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.text.Html;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.ImageSpan;
+import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -34,10 +38,17 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
+import java.util.ArrayList;
 
 public class ArticleDetailActivity extends ActionBarActivity {
 
     private static final String EXTRA_ID = "index";
+
+    private SpannableStringBuilder mHtmlSpannable;
+    private TextView mDescription;
+    private ArrayList<ImageUrlTarget> mImageUrlTargetList = new ArrayList<>();
 
     public static Intent newInstance(Context context, int index) {
         Intent intent = new Intent(context, ArticleDetailActivity.class);
@@ -66,36 +77,23 @@ public class ArticleDetailActivity extends ActionBarActivity {
                 TextView date = (TextView) findViewById(R.id.date);
                 date.setText(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_PUB_DATE)));
 
-                TextView description = (TextView) findViewById(android.R.id.text2);
-                //TODO Retrieve the pictures on the web and display them in the container
-                Spanned htmlSpan = Html.fromHtml(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_CONTENT)), new Html.ImageGetter() {
-                    @Override
-                    public Drawable getDrawable(String source) {
-                        return new Drawable() {
-                            @Override
-                            public void draw(Canvas canvas) {
+                mDescription = (TextView) findViewById(android.R.id.text2);
 
-                            }
+                Spanned htmlSpan = Html.fromHtml(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_CONTENT)));
 
-                            @Override
-                            public void setAlpha(int alpha) {
+                mHtmlSpannable = new SpannableStringBuilder(htmlSpan);
 
-                            }
+                for (ImageSpan img : mHtmlSpannable.getSpans(0,
+                        mHtmlSpannable.length(), ImageSpan.class)) {
 
-                            @Override
-                            public void setColorFilter(ColorFilter cf) {
+                    ImageUrlTarget imageUrlTarget = new ImageUrlTarget(img);
 
-                            }
+                    Picasso.with(getApplicationContext()).load(img.getSource()).into(imageUrlTarget);
+                    mImageUrlTargetList.add(imageUrlTarget);
 
-                            @Override
-                            public int getOpacity() {
-                                return 0;
-                            }
-                        };
-                    }
                 }
-                        , null);
-                description.setText(htmlSpan);
+
+                mDescription.setText(htmlSpan);
 
                 final ImageView icon = (ImageView) findViewById(android.R.id.icon);
                 String imageUrl = cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_IMAGE_URL));
@@ -103,8 +101,8 @@ public class ArticleDetailActivity extends ActionBarActivity {
                     icon.setVisibility(View.GONE);
 
                 }
-                Picasso.with(this) //
-                        .load(imageUrl) //
+                Picasso.with(this)
+                        .load(imageUrl)
                         .into(icon, new Callback() {
 
                             @Override
@@ -134,4 +132,55 @@ public class ArticleDetailActivity extends ActionBarActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+    private class ImageUrlTarget implements Target {
+        private DisplayMetrics mMetrics = new DisplayMetrics();
+        private ImageSpan mImageSpan;
+
+        public ImageUrlTarget(ImageSpan i) {
+            mImageSpan = i;
+            getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
+        }
+
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+            Drawable d = new BitmapDrawable(ArticleDetailActivity.this.getResources(), bitmap);
+            int width, height;
+            int originalWidthScaled = (int) (d.getIntrinsicWidth() * mMetrics.density);
+            int originalHeightScaled = (int) (d.getIntrinsicHeight() * mMetrics.density);
+            if (originalWidthScaled > mMetrics.widthPixels) {
+                height = d.getIntrinsicHeight() * mMetrics.widthPixels
+                        / d.getIntrinsicWidth();
+                width = mMetrics.widthPixels;
+            } else {
+                height = originalHeightScaled;
+                width = originalWidthScaled;
+            }
+
+            d.setBounds(0, 0, width, height);
+            ImageSpan newImg = new ImageSpan(d, mImageSpan.getSource());
+
+            int start = mHtmlSpannable.getSpanStart(mImageSpan);
+            int end = mHtmlSpannable.getSpanEnd(mImageSpan);
+
+            mHtmlSpannable.removeSpan(mImageSpan);
+
+            mHtmlSpannable.setSpan(newImg, start, end,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            mDescription.setText(mHtmlSpannable);
+        }
+
+        @Override
+        public void onBitmapFailed(Drawable errorDrawable) {
+
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+        }
+    }
+
 }
