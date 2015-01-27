@@ -107,6 +107,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
 
     @Override
     public void onDataReceivedRssError() {
+        Utils.dismissProgressDialog();
         refreshItemAnimationFinished();
         mSwipeLayout.setRefreshing(false);
     }
