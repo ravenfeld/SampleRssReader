@@ -16,11 +16,14 @@
 
 package fr.alecanu.samplerssreader;
 
+import android.text.Html;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ImageSpan;
+
 import java.util.Date;
 
 public class Article {
-    private static final String TAG_IMG = "img";
-    private static final String TAG_SRC = "src";
 
     private String mTitle;
     private Date mDate;
@@ -70,11 +73,12 @@ public class Article {
     }
 
     private void searchImage(String content) {
-        int start = content.indexOf(TAG_IMG);
-        if (start != -1) {
-            String src = content.substring(content.indexOf(TAG_SRC + "=\"", start)).replace(TAG_SRC + "=\"", "");
-            int end = src.indexOf("\"");
-            setImageUrl(src.substring(0, end));
+        Spanned htmlSpan = Html.fromHtml(content);
+        SpannableStringBuilder htmlSpannable = new SpannableStringBuilder(htmlSpan);
+
+        ImageSpan[] images = htmlSpannable.getSpans(0, htmlSpannable.length(), ImageSpan.class);
+        if (images.length > 0) {
+            setImageUrl(images[0].getSource());
         }
     }
 }
