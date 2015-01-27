@@ -45,7 +45,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     private RssService mRssService;
     private MenuItem mRefreshItem;
     private SwipeRefreshLayout mSwipeLayout;
-    private TextView mEmptyTextView;
+    private TextView mTextView;
     private boolean mListViewEnabled;
     private ArticleAdapter mArticleAdapter;
 
@@ -110,6 +110,8 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
         Utils.dismissProgressDialog();
         refreshItemAnimationFinished();
         mSwipeLayout.setRefreshing(false);
+        mTextView.setText(R.string.error);
+        mTextView.setVisibility(View.VISIBLE);
     }
 
 
@@ -141,7 +143,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
         setContentView(R.layout.activity_rss_reader);
         mSwipeLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
         mSwipeLayout.setOnRefreshListener(this);
-        mEmptyTextView = (TextView) findViewById(android.R.id.empty);
+        mTextView = (TextView) findViewById(android.R.id.text1);
         ListView listView = (ListView) findViewById(android.R.id.list);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -164,6 +166,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     }
 
     private void refreshList() {
+        mTextView.setVisibility(View.GONE);
         if (Utils.isOnline(this)) {
             mRssService = new RssService(getApplicationContext(), this);
             mRssService.execute(BLOG_URL);
@@ -186,7 +189,8 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
         mSwipeLayout.setRefreshing(false);
         refreshItemAnimationFinished();
         Utils.dismissProgressDialog();
-        mEmptyTextView.setVisibility(mArticleAdapter.isEmpty() ? View.VISIBLE : View.GONE);
+        mTextView.setText(R.string.empty);
+        mTextView.setVisibility(mArticleAdapter.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     @Override

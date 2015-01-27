@@ -23,5 +23,6 @@
     <string name="refresh">Refresh</string>
     <string name="waiting">Please wait &#8230;</string>
     <string name="empty">Empty</string>
+    <string name="error">Error</string>
 
 </resources>
