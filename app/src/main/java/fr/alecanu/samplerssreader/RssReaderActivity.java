@@ -15,23 +15,29 @@
  */
 package fr.alecanu.samplerssreader;
 
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.webkit.URLUtil;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -41,12 +47,16 @@ import android.widget.TextView;
 public class RssReaderActivity extends ActionBarActivity implements RssService.RssDataRetriever,
         LoaderManager.LoaderCallbacks<Cursor>, SwipeRefreshLayout.OnRefreshListener {
     private static final String BLOG_URL = "http://www.trails-endurance.com/feed/";
+    private static final String PREFERENCE_SETUP = "isSetup";
+    private static final String PREFERENCE_URL = "url";
+    private static final String HTTP = "http://";
     private static final int LOADER_RSS = 1;
     private RssService mRssService;
     private MenuItem mRefreshItem;
     private SwipeRefreshLayout mSwipeLayout;
     private TextView mTextView;
     private boolean mListViewEnabled;
+    private String url;
     private ArticleAdapter mArticleAdapter;
 
     @Override
@@ -65,7 +75,13 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
                     mRssService.cancel(true);
             }
         });
-        refreshList();
+        if (!PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(PREFERENCE_SETUP, false)) {
+            changeURL();
+        } else {
+            url = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(PREFERENCE_URL, BLOG_URL);
+            refreshList();
+        }
+
     }
 
     @Override
@@ -87,9 +103,9 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     @Override
     protected void onDestroy() {
         Utils.dismissProgressDialog();
-        if (mRssService != null)
-
+        if (mRssService != null) {
             mRssService.cancel(true);
+        }
         getLoaderManager().destroyLoader(LOADER_RSS);
         super.onDestroy();
     }
@@ -134,9 +150,15 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
                     refreshList();
                 }
                 return true;
+            case R.id.menu_change_url:
+                if (mRssService != null) {
+                    mRssService.cancel(true);
+                }
+                changeURL();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private void initUI() {
@@ -169,7 +191,7 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
         mTextView.setVisibility(View.GONE);
         if (Utils.isOnline(this)) {
             mRssService = new RssService(getApplicationContext(), this);
-            mRssService.execute(BLOG_URL);
+            mRssService.execute(url);
 
         } else {
             Utils.showSimpleInformationDialogBox(this, R.string.no_internet, R.string.ok);
@@ -223,5 +245,53 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
             refreshItemAnimationStarted();
             refreshList();
         }
+    }
+
+    private void changeURL() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final EditText input = new EditText(this);
+        builder.setTitle(getString(R.string.title_change_url))
+                .setMessage(getString(R.string.message_change_url))
+                .setView(input)
+                .setCancelable(false)
+                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        if (Patterns.WEB_URL.matcher(input.getText().toString()).matches()) {
+                            if (URLUtil.isValidUrl(input.getText().toString())) {
+                                url = input.getText().toString();
+                            } else {
+                                url = HTTP + input.getText().toString();
+                            }
+                            SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()
+                            ).edit();
+                            edit.putBoolean
+                                    (PREFERENCE_SETUP, true);
+                            edit.putString(PREFERENCE_URL, url);
+                            edit.commit();
+                            refreshList();
+
+                        } else {
+                            new AlertDialog.Builder(RssReaderActivity.this).setCancelable(false).setMessage
+                                    (getString(R.string.fail_url))
+                                    .setNeutralButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface arg0, int arg1) {
+                                            arg0.dismiss();
+                                            changeURL();
+                                        }
+                                    }).create().show();
+                        }
+                    }
+                })
+                .setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        if (!PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(PREFERENCE_SETUP, false)) {
+                            finish();
+                        } else {
+                            dialog.dismiss();
+                        }
+                    }
+                });
+        builder.create().show();
     }
 }

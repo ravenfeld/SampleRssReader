@@ -20,9 +20,14 @@
     <string name="app_name">SampleRssReader</string>
     <string name="no_internet">Mode offline, please check that your internet connection is active.</string>
     <string name="ok">OK</string>
-    <string name="refresh">Refresh</string>
+    <string name="action_refresh">Refresh</string>
     <string name="waiting">Please wait &#8230;</string>
     <string name="empty">Empty</string>
     <string name="error">Error</string>
+    <string name="action_change_url">Change the URL</string>
+    <string name="cancel">Cancel</string>
+    <string name="fail_url">Formatting URL error</string>
+    <string name="title_change_url">Changing URL</string>
+    <string name="message_change_url">Please enter a valid RSS URL</string>
 
 </resources>
