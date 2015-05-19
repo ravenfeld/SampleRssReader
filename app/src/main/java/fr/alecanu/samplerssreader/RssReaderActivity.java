@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.text.TextUtils;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -250,36 +251,44 @@ public class RssReaderActivity extends ActionBarActivity implements RssService.R
     private void changeURL() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final EditText input = new EditText(this);
+        final String urlPreference = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()
+        ).getString(PREFERENCE_URL, BLOG_URL);
+        input.setHint(urlPreference);
         builder.setTitle(getString(R.string.title_change_url))
                 .setMessage(getString(R.string.message_change_url))
                 .setView(input)
                 .setCancelable(false)
                 .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        if (Patterns.WEB_URL.matcher(input.getText().toString()).matches()) {
-                            if (URLUtil.isValidUrl(input.getText().toString())) {
-                                url = input.getText().toString();
-                            } else {
-                                url = HTTP + input.getText().toString();
-                            }
-                            SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()
-                            ).edit();
-                            edit.putBoolean
-                                    (PREFERENCE_SETUP, true);
-                            edit.putString(PREFERENCE_URL, url);
-                            edit.commit();
-                            refreshList();
+                        if (!TextUtils.isEmpty(input.getText().toString())) {
+                            if (Patterns.WEB_URL.matcher(input.getText().toString()).matches()) {
+                                if (URLUtil.isValidUrl(input.getText().toString())) {
+                                    url = input.getText().toString();
+                                } else {
+                                    url = HTTP + input.getText().toString();
+                                }
+                                SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()
+                                ).edit();
+                                edit.putBoolean
+                                        (PREFERENCE_SETUP, true);
+                                edit.putString(PREFERENCE_URL, url);
+                                edit.commit();
+                                refreshList();
 
+                            } else {
+                                new AlertDialog.Builder(RssReaderActivity.this).setCancelable(false).setMessage
+                                        (getString(R.string.fail_url))
+                                        .setNeutralButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface arg0, int arg1) {
+                                                arg0.dismiss();
+                                                changeURL();
+                                            }
+                                        }).create().show();
+                            }
                         } else {
-                            new AlertDialog.Builder(RssReaderActivity.this).setCancelable(false).setMessage
-                                    (getString(R.string.fail_url))
-                                    .setNeutralButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface arg0, int arg1) {
-                                            arg0.dismiss();
-                                            changeURL();
-                                        }
-                                    }).create().show();
+                            url = urlPreference;
+                            refreshList();
                         }
                     }
                 })
