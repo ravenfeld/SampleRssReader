@@ -19,16 +19,13 @@ package fr.alecanu.samplerssreader;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.text.Html;
-import android.text.Spanned;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -66,37 +63,18 @@ public class ArticleDetailActivity extends ActionBarActivity {
                 TextView date = (TextView) findViewById(R.id.date);
                 date.setText(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_PUB_DATE)));
 
-                TextView description = (TextView) findViewById(android.R.id.text2);
-                //TODO Retrieve the pictures on the web and display them in the container
-                Spanned htmlSpan = Html.fromHtml(cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_CONTENT)), new Html.ImageGetter() {
-                    @Override
-                    public Drawable getDrawable(String source) {
-                        return new Drawable() {
-                            @Override
-                            public void draw(Canvas canvas) {
+                WebView description = (WebView) findViewById(R.id.webview);
+                description.getSettings().setJavaScriptEnabled(true);
 
-                            }
+                String content = cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_CONTENT)).replaceAll("width=\"[0-9]+", "width=\"100%").replaceAll("height=\"[0-9]+\"", "");
+                description.loadData(
+                        content, "text/html; charset=utf-8", "UTF-8");
 
-                            @Override
-                            public void setAlpha(int alpha) {
-
-                            }
-
-                            @Override
-                            public void setColorFilter(ColorFilter cf) {
-
-                            }
-
-                            @Override
-                            public int getOpacity() {
-                                return 0;
-                            }
-                        };
-                    }
+                if (Build.VERSION.SDK_INT >= 11) {
+                    description.setBackgroundColor(0x01000000);
+                } else {
+                    description.setBackgroundColor(0x00000000);
                 }
-                        , null);
-                description.setText(htmlSpan);
-
                 final ImageView icon = (ImageView) findViewById(android.R.id.icon);
                 String imageUrl = cursor.getString(cursor.getColumnIndex(ArticleProvider.KEY_IMAGE_URL));
                 if (imageUrl == null) {
